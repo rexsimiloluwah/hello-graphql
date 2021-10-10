@@ -1,0 +1,67 @@
+mutation{
+  registerUser(input:{
+    name:"Salami Malcolm",
+    email:"ayfabulous@gmail.com",
+    password:"adetoyosi",
+    phone:"07023003029",
+    profile:{github:"https://github.com/malcolmx",location:"San-Francisco"},
+    bio:"Crazy Guy"
+  }){
+    id 
+    name 
+    email
+    profile {
+      gravatar
+      github
+      twitter
+      location
+      linkedin
+    }
+  }
+}
+
+mutation{
+  createProject(input:{
+    title:"Pixelib",
+    description:"A Python library for SoTA image segmentation.",
+    category:MACHINE_LEARNING,
+    link: "https://github.com/pixelib",
+    tags:["Image Segmentation","Machine learning","Computer Vision"],
+    userId: 1
+  }){
+    id 
+    title 
+    description 
+    tags 
+  }
+}
+
+mutation{
+  deleteUser(id:4){
+    id 
+    name 
+    email 
+  }
+}
+
+mutation{
+  deleteProject(id:2){
+    id 
+    title
+  }
+}
+
+mutation{
+  updateUser(id:2,input:{name:"Sope Okunowo",email:"sops@gmail.com"}){
+    id 
+    name
+  }
+}
+
+mutation{
+  updateProject(id:1,input:{title:"scrapix-cli-v2"}){
+    id 
+    name
+  }
+}
+
