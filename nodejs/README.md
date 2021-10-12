@@ -49,7 +49,8 @@ $ npm run dev
 The interactive documentation was generated using [SpectaQL](https://github.com/anvilco/spectaql), kindly check it out.
 
 Access documentation on http://localhost:5000/docs 
-<img src="https://github.com/rexsimiloluwah/hello-graphql/nodejs/images/graphql-docs.png" alt="GraphQL docs">
+<img src="./images/graphql-docs.png" alt="GraphQL docs">
+
 
 ### Simple overview of the GraphQL API 
 The API is a simple one for managing projects. It provides CRUD functionality for users to manage accounts and projects. Authentication and authorization middlewares were not implemented to keep the scope of the project simple. 
