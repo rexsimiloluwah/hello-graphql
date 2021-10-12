@@ -1,0 +1,21 @@
+# Configuration for SpectaQL 
+spectaql:
+  cssBuildMode: full 
+introspection:
+  schemaFile: ./src/schema.gql
+info:
+  title: Simple GraphQL API Reference Documentation
+  description: Let's go
+  termsOfService: https://github.com/rexsimiloluwah/hello-graphql
+  contact:
+    name: API Support
+    url: https://github.com/rexsimiloluwah/hello-graphql
+    email: rexsimiloluwa@gmail.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:5000/graphql
+    description: Production
+    production: true

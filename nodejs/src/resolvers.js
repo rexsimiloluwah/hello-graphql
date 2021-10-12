@@ -3,8 +3,9 @@ import db from './db/pgClient';
 const getProjects = () => {
     return db.query('SELECT * FROM projects')
         .then(res => {
+            res = res.map(obj => ({...obj, userId:obj.userid}))
             console.log(res);
-            return res;
+            return res
         })
         .catch(error => {
             console.error(error);
@@ -18,7 +19,8 @@ const getProject = ({ id }) => {
     return db.one(query, values)
         .then(res => {
             console.log(res);
-            return res;
+            res.userId = res.userid
+            return res
         })
         .catch(error => {
             console.error(error);

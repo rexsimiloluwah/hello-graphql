@@ -40,7 +40,7 @@ const schema = buildSchema(`
         category: ProjectCategory!
         tags: [String]
         likes: Int
-        user: User!
+        userId: Int
         createdAt: Int
     }
 
