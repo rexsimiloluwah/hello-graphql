@@ -13,6 +13,7 @@ class Config:
     ENV = ENV
     CSRF_ENABLED = True 
     SECRET_KEY = "algorhythm" 
+    JWT_SECRET_KEY = "DJOPKd021jksoqso02io1akajdnkq"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class DevelopmentConfig(Config):

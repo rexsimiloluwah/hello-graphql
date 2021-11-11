@@ -1,12 +1,17 @@
 from datetime import datetime
 from sqlalchemy import create_engine 
+from config import SQLALCHEMY_DATABASE_URI
+from sqlalchemy.ext.declarative import declarative_base
+from flask_bcrypt import (
+    generate_password_hash,
+    check_password_hash
+)
 from sqlalchemy.orm import (
     scoped_session,
     sessionmaker,
     relationship,
     backref
 )
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
     Column,
     String,
@@ -16,7 +21,6 @@ from sqlalchemy import (
     DateTime,
     ARRAY
 )
-from config import SQLALCHEMY_DATABASE_URI
 
 engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True)
 
@@ -35,12 +39,18 @@ class User(Base):
     name = Column(String(200),nullable=False)
     username = Column(String(200),nullable=False)
     email = Column(String(200),nullable=False,unique=True)
-    password = Column(String(50),nullable=False)
+    password = Column(String(300),nullable=False)
     phone = Column(String(30),nullable=True)
     website = Column(String(100),nullable=True)
     bio = Column(String(500),nullable=True)
     created_at = Column(DateTime,nullable=False,default=datetime.utcnow)
     posts = relationship('Post', primaryjoin='User.id == foreign(Post.user_id)')
+
+    def set_password(self,password:str)->None:
+        self.password = generate_password_hash(password).decode('utf-8')
+
+    def check_password(self,password:str)->bool:
+        return check_password_hash(self.password, password)
 
     def __repr__(self)->str:
         return f"id: {self.id}, Username: {self.name}"

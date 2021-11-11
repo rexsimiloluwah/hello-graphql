@@ -1,7 +1,8 @@
 import graphene 
 from graphene import relay  
-from graphene_sqlalchemy import SQLAlchemyConnectionField 
+import inspect
 from app.models import db_session 
+from flask_bcrypt import check_password_hash
 from app.models import (
     User as UserModel,
     Post as PostModel,
@@ -12,36 +13,74 @@ from app.api.objects import (
     Post as PostObject,
     Comment as CommentObject,
 ) 
+from flask_graphql_auth import (
+    AuthInfoField,
+    get_jwt_identity,
+    get_raw_jwt,
+    create_access_token,
+    create_refresh_token,
+    get_jwt_identity,
+    mutation_jwt_required,
+    mutation_jwt_refresh_token_required,
+    query_header_jwt_required,
+    mutation_header_jwt_required,
+)
+
+# Authenticated route (https://flask-graphql-auth.readthedocs.io/en/latest/basic_usage.html)
+# For protected queries and mutations, we need to make a union between the object and the AuthInfoField
+# This enables the auth decorators to return the AuthInfoField when an authentication is valid or invalid
+class ProtectedUser(graphene.Union):
+    class Meta:
+        types = (UserObject,AuthInfoField)
+
+class ProtectedPost(graphene.Union):
+    class Meta:
+        types = (PostObject,AuthInfoField)
+
+class ProtectedComment(graphene.Union):
+    class Meta:
+        types = (CommentObject,AuthInfoField)
+
+class ProtectedRefreshToken(graphene.Union):
+    class Meta:
+        types = (graphene.String(),AuthInfoField)
 
 class Query(graphene.ObjectType):
-    users = graphene.List(lambda:UserObject)
-    posts = graphene.List(lambda:PostObject)
-    user = graphene.Field(UserObject, id=graphene.Int())
-    user_by_name = graphene.Field(UserObject, username=graphene.String())
-    post = graphene.Field(PostObject, id=graphene.Int())
-    posts_by_category = graphene.List(lambda:PostObject, category=graphene.String())
-    comments = graphene.List(lambda:CommentObject, post_id=graphene.Int())
+    get_users = graphene.List(lambda:UserObject)
+    get_posts = graphene.List(lambda:PostObject)
+    get_user = graphene.Field(type=ProtectedUser, id=graphene.Int())
+    get_user_by_name = graphene.Field(UserObject, username=graphene.String())
+    get_post = graphene.Field(PostObject, id=graphene.Int())
+    get_posts_by_category = graphene.List(lambda:PostObject, category=graphene.String())
+    get_comments = graphene.List(lambda:CommentObject, post_id=graphene.Int())
+    get_user_posts = graphene.List(lambda:PostObject, user_id=graphene.Int())
 
-    def resolve_users(self,info):
+    def resolve_get_users(self,info):
         return UserModel.query.all()
 
-    def resolve_posts(self,info):
+    def resolve_get_posts(self,info):
         return PostModel.query.all()
 
-    def resolve_user(self,info,id):
-        return UserModel.query.filter_by(id=id).first()
+    def resolve_get_user_by_name(self,info,username):
+        user = UserModel.query.filter_by(username=username).first()
+        return user
 
-    def resolve_user_by_name(self,info,username):
-        return UserModel.query.filter_by(username=username).first()
-
-    def resolve_comments(self,info,post_id):
+    def resolve_get_comments(self,info,post_id):
         return CommentModel.query.filter_by(post_id=post_id).all()
 
-    def resolve_post(self,info,id):
+    def resolve_get_post(self,info,id):
         return PostModel.query.filter_by(id=id).first()
 
-    def resolve_posts_by_category(self,info,category):
+    def resolve_get_posts_by_category(self,info,category):
         return PostModel.query.filter_by(category=category).all() 
+
+    def resolve_get_user_posts(self,info,user_id):
+        return PostModel.query.filter_by(user_id=user_id).all()
+
+    # Testing the query_header_jwt_required decorator for protected query routes
+    @query_header_jwt_required
+    def resolve_get_user(self,info,id):
+        return UserModel.query.filter_by(id=id).first()
 
 class CreateUser(graphene.Mutation):
     class Arguments:
@@ -56,7 +95,7 @@ class CreateUser(graphene.Mutation):
 
     user = graphene.Field(lambda:UserObject)
 
-    def mutate(self,info,name,username,email,password,bio,phone=None,website=None):
+    def mutate(self,info,name:str,username:str,email:str,password:str,bio:str,phone:str=None,website:str=None):
         user = UserModel.query.filter_by(email=email).first()
         if user:
             return CreateUser(
@@ -71,23 +110,58 @@ class CreateUser(graphene.Mutation):
             website=website,
             bio=bio
         )
+        user.set_password(password)
         db_session.add(user)
         db_session.commit()
         return CreateUser(
             user=user
         )
-class AddPost(graphene.Mutation):
+
+class AuthMutation(graphene.Mutation):
+    access_token = graphene.String()
+    refresh_token = graphene.String()
+    user = graphene.Field(lambda:UserObject)
+
     class Arguments:
+        email = graphene.String()
+        password = graphene.String()
+
+    def mutate(self,info,email:str,password:str):
+        user = UserModel.query.filter_by(email=email).first()
+        print(user)
+        if not user:
+            raise Exception("Authorization Failed, User does not exist.")
+        if not user.check_password(password):
+            raise Exception("Authorization Failed, Password is Incorrect.")
+        return AuthMutation(
+            user=user,
+            access_token=create_access_token(identity={
+                'id': user.id,
+                'email': user.email
+            }),
+            refresh_token=create_refresh_token(identity={
+                'id': user.id,
+                'email': user.email
+            })
+        )
+
+class AddPost(graphene.Mutation):
+    post = graphene.Field(type=ProtectedPost)
+
+    class Arguments(object):
         id = graphene.Int(required=False)
         title = graphene.String(required=True)
         category = graphene.String(required=True)
         content = graphene.String(required=True)
         tags = graphene.List(graphene.String)
-        user_id = graphene.Int(required=True)
 
-    post = graphene.Field(lambda:PostObject)
-
-    def mutate(self,info,title,category,content,tags,user_id):
+    @classmethod
+    @mutation_header_jwt_required
+    def mutate(self,_,info,title:str,category:str,content:str,tags:list):
+        current_user = get_jwt_identity()
+        print('Current user:',current_user)
+        if current_user:
+            user_id = current_user['id']
         post = PostModel(
             title=title,
             category=category,
@@ -101,17 +175,78 @@ class AddPost(graphene.Mutation):
             post=post
         )
 
-class AddComment(graphene.Mutation):
-    class Arguments:
-        id = graphene.Int(required=False)
-        comment = graphene.String(required=True)
-        post_id = graphene.Int(required=True)
-        user_id = graphene.Int(required=True)
+class UpdatePost(graphene.Mutation):
+    post = graphene.Field(ProtectedPost)
 
-    comment = graphene.Field(lambda:CommentObject)
-    def mutate(self,info,comment,post_id,user_id):
+    class Arguments(object):
+        id = graphene.Int(required=True)
+        title = graphene.String()
+        content = graphene.String()
+        category = graphene.String()
+        tags = graphene.List(graphene.String)
+
+    @classmethod 
+    @mutation_header_jwt_required 
+    def mutate(self,_,info,id:int,title:str=None,content:str=None,category:str=None,tags:list=None):
+        post = PostModel.query.filter_by(id=id).first()
+        if not post:
+            raise Exception("Post not found")
+        if title is not None:
+            post.title = title 
+        if content is not None:
+            post.content = content 
+        if category is not None:
+            post.category = category 
+        if tags is not None:
+            post.tags = tags 
+        db_session.commit()
+        return UpdatePost(
+            post=post
+        )
+
+class DeletePost(graphene.Mutation):
+    post = graphene.Field(ProtectedPost) 
+
+    class Arguments(object):
+        id = graphene.Int(required=True)
+        token = graphene.String()
+
+    @classmethod 
+    @mutation_header_jwt_required
+    def mutate(self,_,info,id:int):
+        current_user = get_jwt_identity()
+        if not current_user:
+            raise Exception("Authentication required.")
+        post = PostModel.query.filter_by(id=id).first()
+        if post.user_id != current_user['id']:
+            raise Exception("This user cannot delete this post.")
+        db_session.delete(post)
+        db_session.commit()
+        return DeletePost(
+            post=post
+        )
+        
+class AddComment(graphene.Mutation):
+    comment = graphene.Field(type=ProtectedComment)
+
+    class Arguments(object):
+        id = graphene.Int(required=False)
+        content = graphene.String(required=True)
+        post_id = graphene.Int(required=True)
+
+    @classmethod 
+    @mutation_header_jwt_required
+    def mutate(self,_,info,content:str,post_id:int):
+        current_user = get_jwt_identity()
+        if not current_user:
+            raise Exception('Authentication is required.')
+        post = PostModel.query.filter_by(id=post_id).first()
+        print(post)
+        if not post:
+            raise Exception("Post not found")
+        user_id = current_user['id']
         comment = CommentModel(
-            comment=comment,
+            comment=content,
             post_id=post_id,
             user_id=user_id,
         )
@@ -121,7 +256,79 @@ class AddComment(graphene.Mutation):
             comment=comment
         )
 
+class UpdateComment(graphene.Mutation):
+    comment = graphene.Field(type=ProtectedComment)
+
+    class Arguments(object):
+        id = graphene.Int(required=True)
+        content = graphene.String()
+
+    @classmethod 
+    @mutation_header_jwt_required
+    def mutate(self,_,info,id:int,content:str=None):
+        current_user = get_jwt_identity()
+        if not current_user:
+            raise Exception('Authentication is required.')
+        
+        comment = CommentModel.query.filter_by(id=id).first()
+        if not comment:
+            raise Exception('Comment not found.')
+        comment.comment = content
+        db_session.commit()
+        return UpdateComment(
+            comment=comment
+        )         
+
+class DeleteComment(graphene.Mutation):
+    comment = graphene.Field(type=ProtectedComment)
+
+    class Arguments(object):
+        id = graphene.Int(required=True)
+
+    @classmethod 
+    @mutation_header_jwt_required
+    def mutate(self,_,info,id:int):
+        current_user = get_jwt_identity()
+        if not current_user:
+            raise Exception('Authentication is required.')
+        comment = CommentModel.query.filter_by(id=id).first()
+        if not comment:
+            raise Exception('Comment not found.')
+        print(comment)
+        if comment.user_id != current_user['id']:
+            raise Exception('This user is not authorized to delete this comment.')
+        db_session.delete(comment)
+        db_session.commit()
+        return DeleteComment(
+            comment=comment
+        )
+
+class RefreshMutation(graphene.Mutation):
+    class Arguments:
+        refresh_token = graphene.String()
+
+    user = graphene.Field(lambda:UserObject)
+    access_token = graphene.String()
+
+    @mutation_jwt_refresh_token_required
+    def mutate(self):
+        current_user = get_jwt_identity()
+        user = UserModel.query.filter_by(id=current_user['id']).first()
+        return RefreshMutation(
+            user=user,
+            access_token=create_access_token(identity={
+                'id':current_user['id'],
+                'email':current_user['email']
+            })
+        )
+    
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
     add_post = AddPost.Field()
+    update_post = UpdatePost.Field()
+    delete_post = DeletePost.Field()
     add_comment = AddComment.Field()
+    update_comment = UpdateComment.Field()
+    delete_comment = DeleteComment.Field()
+    login_user = AuthMutation.Field()
+    refresh_token = RefreshMutation.Field()

@@ -1,24 +1,27 @@
 import graphene
 from flask import Flask
 from config import Config
+from flask_bcrypt import Bcrypt 
 from flask_graphql import GraphQLView
+from flask_graphql_auth import GraphQLAuth 
+from app.models import Base,engine,db_session
 from app.api.schema import (
     Query,
     Mutation
 )
-from app.models import Base,engine,db_session
-Base.metadata.create_all(engine)
 
-# Database engine 
+app = Flask(__name__)
+
+Base.metadata.create_all(engine)
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
 
 def init_app():
-    app = Flask(__name__)
-
     # Load app configuration 
     app.config.from_object(get_app_config())
-    
+    bcrypt = Bcrypt(app)
+    auth = GraphQLAuth(app)
+
     @app.teardown_appcontext 
     def shutdown_session(exception=None)->None:
         db_session.remove()

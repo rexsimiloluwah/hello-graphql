@@ -1,0 +1,137 @@
+1. Login a user
+mutation{
+  loginUser(email:"rexsimiloluwa@gmail.com",password:"adetoyosi"){
+    user{
+      id,
+      email,
+      name,
+      username,
+      createdAt,
+    },
+    accessToken,
+    refreshToken
+  }
+}
+
+2. Get user (authenticated query using Bearer token)
+query{
+    getUser(id:1){
+        __typename 
+        ... on User{
+            id,
+            name,
+            email,
+            bio,
+        }
+        __typename 
+        ... on AuthInfoField{
+            message
+        }
+    }
+}
+
+3. Refresh Token test
+mutation{
+    refreshToken(refreshToken:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTYzNjYyNjE4MSwibmJmIjoxNjM2NjI2MTgxLCJqdGkiOiIyNWExMTYwZi1mYTg5LTRkY2EtOTg3YS0xMTgzOWFhYTgxYzMiLCJpZGVudGl0eSI6eyJpZCI6MSwiZW1haWwiOiJyZXhzaW1pbG9sdXdhQGdtYWlsLmNvbSJ9LCJleHAiOjE2MzkyMTgxODF9.XHMWzIL8NCYkocH0mW6tF1lAQ7riUhGjdJkfeIrBzyw"){
+        user{
+            id,
+            email
+        },
+        accessToken
+    }
+}
+
+4. Add Post Test
+mutation{
+  addPost(title:"Test title 2",category:"Test category 2",content:"Test content 2",tags:["tag1","tag2"],token:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNjM2NjI5OTI5LCJuYmYiOjE2MzY2Mjk5MjksImp0aSI6IjkyMjdjZjU0LTRkNmYtNDFhYS1hMWQzLTJhYmYzMjIzMDU4YiIsImlkZW50aXR5Ijp7ImlkIjoxLCJlbWFpbCI6InJleHNpbWlsb2x1d2FAZ21haWwuY29tIn0sImV4cCI6MTYzNjYzMDgyOX0.usgNarNpTps3WGNFhaoIljcIhQYHFjfm5cjUCiMARE"){
+    post{
+      __typename 
+      ... on Post{
+        id,
+        title
+      }
+      __typename
+      ... on AuthInfoField{
+          message
+      }
+      
+    }
+  }
+}
+
+5. Update Post Test 
+mutation{
+  updatePost(id:1,title:"Test title 3",tags:["tag1","tag2"],token:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNjM2NjMxNzc4LCJuYmYiOjE2MzY2MzE3NzgsImp0aSI6IjBlNzFhMGU3LWFiNTEtNDBlNy1hN2EyLWQ4NGJjMTkxYzRkNSIsImlkZW50aXR5Ijp7ImlkIjoxLCJlbWFpbCI6InJleHNpbWlsb2x1d2FAZ21haWwuY29tIn0sImV4cCI6MTYzNjYzMjY3OH0.sFg-utGoNFNdGoWeRRF9q7AyKXrGFJJMtPxYmirrKKY"){
+    post{
+      __typename 
+      ... on Post{
+        id,
+        title
+      }
+      __typename
+      ... on AuthInfoField{
+          message
+      }
+      
+    }
+  }
+}
+
+6. Delete Post Test 
+mutation{
+  deletePost(id:6){
+    post{
+      __typename 
+      ... on Post{
+        id,
+        title,
+        userId
+      }
+      __typename
+      ... on AuthInfoField{
+          message
+      }
+      
+    }
+  }
+}
+
+7. Add Comment Test 
+mutation{
+  addComment(postId:2,content:"Nice Post"){
+    comment{
+      __typename 
+      ... on Comment{
+        id,
+        comment,
+        userId,
+        postId
+      }
+      __typename
+      ... on AuthInfoField{
+          message
+      }
+      
+    }
+  }
+}
+
+8. Update Comment Test 
+mutation{
+  updateComment(id:2,content:"Nice Post updated"){
+    comment{
+      __typename 
+      ... on Comment{
+        id,
+        comment,
+        userId,
+        postId
+      }
+      __typename
+      ... on AuthInfoField{
+          message
+      }
+      
+    }
+  }
+}
