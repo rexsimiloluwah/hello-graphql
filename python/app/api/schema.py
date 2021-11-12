@@ -16,11 +16,9 @@ from app.api.objects import (
 from flask_graphql_auth import (
     AuthInfoField,
     get_jwt_identity,
-    get_raw_jwt,
     create_access_token,
     create_refresh_token,
     get_jwt_identity,
-    mutation_jwt_required,
     mutation_jwt_refresh_token_required,
     query_header_jwt_required,
     mutation_header_jwt_required,
@@ -54,6 +52,7 @@ class Query(graphene.ObjectType):
     get_posts_by_category = graphene.List(lambda:PostObject, category=graphene.String())
     get_comments = graphene.List(lambda:CommentObject, post_id=graphene.Int())
     get_user_posts = graphene.List(lambda:PostObject, user_id=graphene.Int())
+    get_post_comments = graphene.List(lambda:CommentObject, post_id=graphene.Int())
 
     def resolve_get_users(self,info):
         return UserModel.query.all()
@@ -61,21 +60,24 @@ class Query(graphene.ObjectType):
     def resolve_get_posts(self,info):
         return PostModel.query.all()
 
-    def resolve_get_user_by_name(self,info,username):
+    def resolve_get_user_by_name(self,info,username:str):
         user = UserModel.query.filter_by(username=username).first()
         return user
 
-    def resolve_get_comments(self,info,post_id):
+    def resolve_get_comments(self,info,post_id:int):
         return CommentModel.query.filter_by(post_id=post_id).all()
 
-    def resolve_get_post(self,info,id):
+    def resolve_get_post(self,info,id:int):
         return PostModel.query.filter_by(id=id).first()
 
-    def resolve_get_posts_by_category(self,info,category):
+    def resolve_get_posts_by_category(self,info,category:str):
         return PostModel.query.filter_by(category=category).all() 
 
-    def resolve_get_user_posts(self,info,user_id):
+    def resolve_get_user_posts(self,info,user_id:int):
         return PostModel.query.filter_by(user_id=user_id).all()
+
+    def resolve_get_post_comments(self,info,post_id:int):
+        return CommentModel.query.filter_by(post_id=post_id).all()
 
     # Testing the query_header_jwt_required decorator for protected query routes
     @query_header_jwt_required
@@ -125,7 +127,7 @@ class AuthMutation(graphene.Mutation):
     class Arguments:
         email = graphene.String()
         password = graphene.String()
-
+        
     def mutate(self,info,email:str,password:str):
         user = UserModel.query.filter_by(email=email).first()
         print(user)
@@ -157,7 +159,7 @@ class AddPost(graphene.Mutation):
 
     @classmethod
     @mutation_header_jwt_required
-    def mutate(self,_,info,title:str,category:str,content:str,tags:list):
+    def mutate(self,_,info,title:str,category:str,content:str,tags:list=None):
         current_user = get_jwt_identity()
         print('Current user:',current_user)
         if current_user:
@@ -166,7 +168,7 @@ class AddPost(graphene.Mutation):
             title=title,
             category=category,
             content=content,
-            tags=tags,
+            tags=",".join(tags),
             user_id=user_id
         )
         db_session.add(post)
@@ -198,7 +200,7 @@ class UpdatePost(graphene.Mutation):
         if category is not None:
             post.category = category 
         if tags is not None:
-            post.tags = tags 
+            post.tags = ",".join(tags) 
         db_session.commit()
         return UpdatePost(
             post=post
@@ -209,7 +211,6 @@ class DeletePost(graphene.Mutation):
 
     class Arguments(object):
         id = graphene.Int(required=True)
-        token = graphene.String()
 
     @classmethod 
     @mutation_header_jwt_required

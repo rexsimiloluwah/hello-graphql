@@ -1,6 +1,8 @@
 from datetime import datetime
-from sqlalchemy import create_engine 
+from sqlalchemy import create_engine
+from sqlalchemy.sql.sqltypes import TEXT 
 from config import SQLALCHEMY_DATABASE_URI
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.ext.declarative import declarative_base
 from flask_bcrypt import (
     generate_password_hash,
@@ -60,9 +62,9 @@ class Post(Base):
     id = Column(Integer, primary_key=True,autoincrement=True)
     title = Column(String(200),nullable=False,unique=True)
     category = Column(String(100),nullable=False) 
-    content = Column(String,nullable=False)
+    content = Column(TEXT,nullable=False)
     likes = Column(Integer,nullable=True,default=0)
-    tags = Column(ARRAY(String),nullable=True,default=[])
+    tags = Column(String(500),nullable=True)
     user_id = Column(Integer,ForeignKey("users.id"))
     created_at = Column(DateTime,nullable=False,default=datetime.utcnow)
     comments = relationship('Comment', primaryjoin='Post.id == foreign(Comment.post_id)')
@@ -73,7 +75,7 @@ class Post(Base):
 class Comment(Base):
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True,autoincrement=True)
-    comment = Column(String,nullable=False) 
+    comment = Column(String(1000),nullable=False) 
     user_id = Column(Integer,ForeignKey("users.id"))
     post_id = Column(Integer, ForeignKey("posts.id"))
     created_at = Column(DateTime,nullable=False,default=datetime.utcnow)

@@ -1,0 +1,40 @@
+version: "3.3"
+
+volumes:
+  flask-graphql-db: 
+
+services:
+  # MySQL database service
+  database:
+    container_name: mysql-database 
+    image: mysql:5.7 
+    restart: always
+    environment:
+      MYSQL_DATABASE: graphqldb 
+      MYSQL_ROOT_PASSWORD: adetoyosi
+      MYSQL_USER: flask-user
+      MYSQL_PASSWORD: adetoyosi
+    ports:
+      - 3307:3306 
+    expose:
+      - 3306
+    volumes:
+     - flask-graphql-db:/var/lib/mysql 
+  
+  # Flask GraphQL server service
+  server:
+    container_name: flask-graphql-basics
+    build: .
+    ports: 
+      - 5000:5000
+    volumes: [".:/usr/src/app"]
+    restart: always 
+    depends_on:
+      - database
+    environment:
+      ENV: development 
+      DB_USERNAME: flask-user
+      DB_PASSWORD: adetoyosi 
+      DB_HOST: database
+      DB_PORT: 3306 
+      DB_NAME: graphqldb  

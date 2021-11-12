@@ -1,6 +1,6 @@
 1. Login a user
 mutation{
-  loginUser(email:"rexsimiloluwa@gmail.com",password:"adetoyosi"){
+  loginUser(email:"rexsimiloluwa@gmail.com",password:"password-2001"){
     user{
       id,
       email,
@@ -13,7 +13,7 @@ mutation{
   }
 }
 
-2. Get user (authenticated query using Bearer token)
+2. Get user (sample authenticated query using Bearer token)
 query{
     getUser(id:1){
         __typename 
@@ -30,7 +30,7 @@ query{
     }
 }
 
-3. Refresh Token test
+3. Refresh Token Mutation
 mutation{
     refreshToken(refreshToken:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTYzNjYyNjE4MSwibmJmIjoxNjM2NjI2MTgxLCJqdGkiOiIyNWExMTYwZi1mYTg5LTRkY2EtOTg3YS0xMTgzOWFhYTgxYzMiLCJpZGVudGl0eSI6eyJpZCI6MSwiZW1haWwiOiJyZXhzaW1pbG9sdXdhQGdtYWlsLmNvbSJ9LCJleHAiOjE2MzkyMTgxODF9.XHMWzIL8NCYkocH0mW6tF1lAQ7riUhGjdJkfeIrBzyw"){
         user{
@@ -41,9 +41,9 @@ mutation{
     }
 }
 
-4. Add Post Test
+4. Add Post Mutation (Bearer token required in Header)
 mutation{
-  addPost(title:"Test title 2",category:"Test category 2",content:"Test content 2",tags:["tag1","tag2"],token:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNjM2NjI5OTI5LCJuYmYiOjE2MzY2Mjk5MjksImp0aSI6IjkyMjdjZjU0LTRkNmYtNDFhYS1hMWQzLTJhYmYzMjIzMDU4YiIsImlkZW50aXR5Ijp7ImlkIjoxLCJlbWFpbCI6InJleHNpbWlsb2x1d2FAZ21haWwuY29tIn0sImV4cCI6MTYzNjYzMDgyOX0.usgNarNpTps3WGNFhaoIljcIhQYHFjfm5cjUCiMARE"){
+  addPost(title:"Test title 2",category:"Test category 2",content:"Test content 2",tags:["tag1","tag2"],){
     post{
       __typename 
       ... on Post{
@@ -59,9 +59,9 @@ mutation{
   }
 }
 
-5. Update Post Test 
+5. Update Post Mutation (Bearer token required in Header)
 mutation{
-  updatePost(id:1,title:"Test title 3",tags:["tag1","tag2"],token:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNjM2NjMxNzc4LCJuYmYiOjE2MzY2MzE3NzgsImp0aSI6IjBlNzFhMGU3LWFiNTEtNDBlNy1hN2EyLWQ4NGJjMTkxYzRkNSIsImlkZW50aXR5Ijp7ImlkIjoxLCJlbWFpbCI6InJleHNpbWlsb2x1d2FAZ21haWwuY29tIn0sImV4cCI6MTYzNjYzMjY3OH0.sFg-utGoNFNdGoWeRRF9q7AyKXrGFJJMtPxYmirrKKY"){
+  updatePost(id:1,title:"Test title 3",tags:["tag1","tag2"]){
     post{
       __typename 
       ... on Post{
@@ -77,7 +77,7 @@ mutation{
   }
 }
 
-6. Delete Post Test 
+6. Delete Post Mutation (Bearer token required in Header)
 mutation{
   deletePost(id:6){
     post{
@@ -96,7 +96,7 @@ mutation{
   }
 }
 
-7. Add Comment Test 
+7. Add Comment Mutation (Bearer token required in Header)
 mutation{
   addComment(postId:2,content:"Nice Post"){
     comment{
@@ -116,7 +116,7 @@ mutation{
   }
 }
 
-8. Update Comment Test 
+8. Update Comment Mutation
 mutation{
   updateComment(id:2,content:"Nice Post updated"){
     comment{
@@ -133,5 +133,49 @@ mutation{
       }
       
     }
+  }
+}
+
+9. Create User Mutation
+mutation{
+    createUser(name:"Similoluwa Okunowo",username:"rexidic",email:"rexsimiloluwa@gmail.com",password:"password-2001",bio:"Crazy dude | Sofware Engineer"){
+        user{
+            id,
+            name,
+            username,
+            email,
+            createdAt
+        }
+    }
+}
+
+10. Get all Users query 
+query{
+    getUsers{
+        id,
+        name,
+        username,
+        email,
+        createdAt
+    }
+}
+
+11. Get all comments for a post 
+query{
+    getPostComments(postId:2){
+        id,
+        comment,
+        createdAt
+    }
+}
+
+12. Get all posts 
+query{
+  getPosts{
+    id,
+    title,
+    content,
+    category,
+    createdAt
   }
 }
