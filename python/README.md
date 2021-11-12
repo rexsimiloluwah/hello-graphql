@@ -8,20 +8,21 @@ Hello-GraphQL (python version)
 - Any MySQL server 
 - GraphQL API Testing tool i.e. Postman, Insomnia
 
+
 ## High-level directory structure 
     .
     ├── ...
-    ├── `app`                   
-    │   ├── `api`
+    ├── app                   
+    │   ├── api
         |   ├── objects.py   # GraphQL SQLAlchemy Object types          
         |   └── schema.py    # Schema file for queries and mutations using graphene        
     │   ├── main.py          # Main flask app configuration                  
     │   └── models.py        # SQLAlchemy models    
-    ├── `config.py`          # Flask config file 
-    ├── `docker-compose.yml` # Docker compose file
-    ├── `Dockerfile`         # Dockerfile
-    ├── `run.py`             # Run the flask server
-    ├── `.env`               # Yeah, environment variables  
+    ├── config.py            # Flask config file 
+    ├── docker-compose.yml   # Docker compose file
+    ├── Dockerfile           # Dockerfile
+    ├── run.py               # Run the flask server
+    ├── .env                 # Yeah, environment variables  
     └── ...
 
 ## Run (without Docker)
